@@ -119,6 +119,20 @@ class DrunkenStumble:
 
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    from matplotlib import rc
+    rc('font', **{'family': 'serif', 'serif': ['DejaVu Serif']})
+    SMALL_SIZE = 10
+    MEDIUM_SIZE = 12
+    BIGGER_SIZE = 14
+    plt.rc('font', size=MEDIUM_SIZE)       # controls default text sizes
+    plt.rc('axes', titlesize=BIGGER_SIZE)  # fontsize of the axes title
+    plt.rc('axes', labelsize=MEDIUM_SIZE)  # fontsize of the x and y labelsa
+    plt.rc('xtick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+    plt.rc('ytick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+    plt.rc('legend', fontsize=SMALL_SIZE)  # legend fontsize
+    plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
     ants = np.random.uniform(5, 15, (10, 2))
     bounds = np.array([[0.0, 0.0], [200.0, 200.0]])
     ds = DrunkenStumble(ants, 6.0, bounds)
@@ -126,7 +140,6 @@ if __name__ == "__main__":
     print('baselines:\n', ds.baselines)
     print('weights:\n', ds.weights)
 
-    import matplotlib.pyplot as plt
     plt.figure()
     plt.subplot(121)
     plt.scatter(ds.antennas[:, 0], ds.antennas[:, 1])
