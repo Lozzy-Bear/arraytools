@@ -48,68 +48,81 @@ def read_nec(file):
 if __name__ == '__main__':
     tx_data, _ = read_nec('ibtx4l.out')
     rx_data, _ = read_nec('ibrx.out')
-
-    y = np.arange(40, 64, 0.1)
-    x = np.arange(-125, -90, 0.1)
+    y = np.arange(52, 62 + 0.1, 0.1) # lats
+    x = np.arange(-112, -98 + 0.1, 0.1) # lons
     lons, lats = np.meshgrid(x, y)
-    alt = 130.0e3
-    m = np.zeros(lons.shape)
-    print('mshape', m.shape)
     tx_lat = 50.893
     tx_lon = -109.403
     rx_lat = 52.243
     rx_lon = -106.450
 
-    # az1, el1, r1 = pm.geodetic2aer(60.0, -108.403, alt,
-    #                                tx_lat, tx_lon, 0.0, ell=pm.Ellipsoid("wgs84"), deg=True)
-    # print(90.0 - el1)
-    # exit()
+    alts = np.arange(70_000, 131_000, 1_000)
+    gm = np.zeros((y.shape[0], x.shape[0], alts.shape[0], 1))
 
-    for i in range(lons.shape[0]):
-        for j in range(lats.shape[1]):
-            az1, el1, r1 = pm.geodetic2aer(lats[i, j], lons[i, j], alt,
-                                           tx_lat, tx_lon, 0.0, ell=pm.Ellipsoid("wgs84"), deg=True)
-            az2, el2, r2 = pm.geodetic2aer(lats[i, j], lons[i, j], alt,
-                                           rx_lat, rx_lon, 0.0, ell=pm.Ellipsoid("wgs84"), deg=True)
-            az1 = np.round(((90.0 + 16.0 - az1) % 360.0))
-            az2 = np.round(((90.0 + 7.0 - az2) % 360.0))
-            el1 = np.round(90.0 - el1)
-            el2 = np.round(90.0 - el2)
-            pw1 = np.argwhere((tx_data[0, :] == el1) & (tx_data[1, :] == az1))
-            pw2 = np.argwhere((rx_data[0, :] == el2) & (rx_data[1, :] == az2))
-            pw = tx_data[4, pw1] + rx_data[4, pw2]
-            # print(i, j, pw, pw.size, az1, el1, az2, el2)
-            # if (el1 < 0.0) or (el2 < 0.0):
-            #     pw = np.nan
-            if pw.size == 0:
-                pw = np.nan
-            else:
-                pw = pw.flatten()[0]
-            m[i, j] = pw
+    # alts = [110_000]
+    for k, alt in enumerate(alts):
+        print(alt, alt/1000)
+        m = np.zeros(lons.shape)
+        print('mshape', m.shape)
 
-    plt.figure()
-    plt.imshow(m, origin='lower', cmap='inferno', vmin=-20)
-    plt.colorbar()
-    plt.xticks(np.linspace(0, 350, 35), labels=np.arange(-125, -90, 1))
-    plt.yticks(np.linspace(0, 240, 24), labels=np.arange(40, 64, 1))
-    plt.grid()
+        for i in range(lons.shape[0]):
+            for j in range(lats.shape[1]):
+                az1, el1, r1 = pm.geodetic2aer(lats[i, j], lons[i, j], alt,
+                                               tx_lat, tx_lon, 0.0, ell=pm.Ellipsoid("wgs84"), deg=True)
+                az2, el2, r2 = pm.geodetic2aer(lats[i, j], lons[i, j], alt,
+                                               rx_lat, rx_lon, 0.0, ell=pm.Ellipsoid("wgs84"), deg=True)
+                az1 = np.round(((90.0 + 16.0 - az1) % 360.0))
+                az2 = np.round(((90.0 + 7.0 - az2) % 360.0))
+                el1 = np.round(90.0 - el1)
+                el2 = np.round(90.0 - el2)
+                pw1 = np.argwhere((tx_data[0, :] == el1) & (tx_data[1, :] == az1))
+                pw2 = np.argwhere((rx_data[0, :] == el2) & (rx_data[1, :] == az2))
+                pw = tx_data[4, pw1] + rx_data[4, pw2]
+                if pw.size == 0:
+                    pw = np.nan
+                else:
+                    pw = pw.flatten()[0]
+                m[i, j] = pw
+                gm[i, j, k, 0] = pw
 
-    # 3D Map
-    # fig, ax = plt.subplots(subplot_kw={'projection': '3d'})
-    # u, v = np.mgrid[0:np.pi:360j, 0:2 * np.pi:360j]
-    # r = 1.0
-    # x = r * np.sin(u) * np.cos(v)
-    # y = r * np.sin(u) * np.sin(v)
-    # z = r * np.cos(u)
-    # rr = 1.01
-    # xx = rr * np.sin(np.deg2rad(lats)) * np.cos(np.deg2rad(lons))
-    # yy = rr * np.sin(np.deg2rad(lats)) * np.sin(np.deg2rad(lons))
-    # zz = rr * np.cos(np.deg2rad(lats))
-    # print(x.shape, y.shape, z.shape)
-    # # ax.plot_surface(x, y, z)
-    # scamap = plt.cm.ScalarMappable(cmap='inferno')
-    # fcolors = scamap.to_rgba(np.nan_to_num(np.flipud(m), nan=-40))
-    # ax.plot_surface(xx, yy, zz, facecolors=fcolors, cmap='inferno')
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=[6.4, 4.8])
+        plt.title(f"Altitude = {alt/1000} km")
+        ax.set_xlabel("Longitude [deg]")
+        ax.set_ylabel("Latitude [deg]")
+        im = ax.imshow(m, origin='lower', extent=[0, 140, 0, 100],
+                       cmap='inferno', vmin=0.0, vmax=30.0, interpolation='bicubic')
+        plt.colorbar(im, label='Link Gain [dB]', shrink=0.72)
+        ax.set_xticks(np.arange(0, 140 + 20, 20), labels=np.arange(-112, -98 + 2, 2))
+        ax.set_yticks(np.arange(0, 100 + 20, 20), labels=np.arange(52, 62 + 2, 2))
+        ax.grid(which='minor', color='Grey', linestyle=':', linewidth=0.5)
+        ax.grid(which='major', color='Grey', linestyle=':', linewidth=0.5)
+        ax.minorticks_on()
+        plt.tight_layout()
+        # plt.savefig(f"ib_link_gain_{int(alt/1000)}.pdf")
+        plt.show()
 
-    plt.show()
+        # 3D Map
+        # fig, ax = plt.subplots(subplot_kw={'projection': '3d'})
+        # u, v = np.mgrid[0:np.pi:360j, 0:2 * np.pi:360j]
+        # r = 1.0
+        # x = r * np.sin(u) * np.cos(v)
+        # y = r * np.sin(u) * np.sin(v)
+        # z = r * np.cos(u)
+        # rr = 1.01
+        # xx = rr * np.sin(np.deg2rad(lats)) * np.cos(np.deg2rad(lons))
+        # yy = rr * np.sin(np.deg2rad(lats)) * np.sin(np.deg2rad(lons))
+        # zz = rr * np.cos(np.deg2rad(lats))
+        # print(x.shape, y.shape, z.shape)
+        # # ax.plot_surface(x, y, z)
+        # scamap = plt.cm.ScalarMappable(cmap='inferno')
+        # fcolors = scamap.to_rgba(np.nan_to_num(np.flipud(m), nan=-40))
+        # ax.plot_surface(xx, yy, zz, facecolors=fcolors, cmap='inferno')
 
+        # plt.show()
+
+    # import h5py
+    # hf = h5py.File('ib3d_link_gain_mask.h5', 'w')
+    # hf.create_dataset('gain_mask', data=gm)
+    # hf.create_dataset('latitude', data=y)
+    # hf.create_dataset('longitude', data=x)
+    # hf.create_dataset('altitude', data=alts)
