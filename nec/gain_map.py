@@ -46,10 +46,10 @@ def read_nec(file):
 
 
 if __name__ == '__main__':
-    tx_data, _ = read_nec('ibtx4l.out')
+    tx_data, _ = read_nec('ibtx1l.out')
     rx_data, _ = read_nec('ibrx.out')
-    y = np.arange(52, 62 + 0.1, 0.1) # lats
-    x = np.arange(-112, -98 + 0.1, 0.1) # lons
+    y = np.arange(52, 62 + 0.1, 0.1)  # lats
+    x = np.arange(-112, -98 + 0.1, 0.1)  # lons
     lons, lats = np.meshgrid(x, y)
     tx_lat = 50.893
     tx_lon = -109.403
@@ -57,9 +57,9 @@ if __name__ == '__main__':
     rx_lon = -106.450
 
     alts = np.arange(70_000, 131_000, 1_000)
+    # alts = np.asarray([110_000])
     gm = np.zeros((y.shape[0], x.shape[0], alts.shape[0], 1))
 
-    # alts = [110_000]
     for k, alt in enumerate(alts):
         print(alt, alt/1000)
         m = np.zeros(lons.shape)
@@ -71,7 +71,7 @@ if __name__ == '__main__':
                                                tx_lat, tx_lon, 0.0, ell=pm.Ellipsoid("wgs84"), deg=True)
                 az2, el2, r2 = pm.geodetic2aer(lats[i, j], lons[i, j], alt,
                                                rx_lat, rx_lon, 0.0, ell=pm.Ellipsoid("wgs84"), deg=True)
-                az1 = np.round(((90.0 + 16.0 - az1) % 360.0))
+                az1 = np.round(((90.0 + 13.0 - az1) % 360.0))
                 az2 = np.round(((90.0 + 7.0 - az2) % 360.0))
                 el1 = np.round(90.0 - el1)
                 el2 = np.round(90.0 - el2)
@@ -85,21 +85,22 @@ if __name__ == '__main__':
                 m[i, j] = pw
                 gm[i, j, k, 0] = pw
 
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=[6.4, 4.8])
-        plt.title(f"Altitude = {alt/1000} km")
-        ax.set_xlabel("Longitude [deg]")
-        ax.set_ylabel("Latitude [deg]")
-        im = ax.imshow(m, origin='lower', extent=[0, 140, 0, 100],
-                       cmap='inferno', vmin=0.0, vmax=30.0, interpolation='bicubic')
-        plt.colorbar(im, label='Link Gain [dB]', shrink=0.72)
-        ax.set_xticks(np.arange(0, 140 + 20, 20), labels=np.arange(-112, -98 + 2, 2))
-        ax.set_yticks(np.arange(0, 100 + 20, 20), labels=np.arange(52, 62 + 2, 2))
-        ax.grid(which='minor', color='Grey', linestyle=':', linewidth=0.5)
-        ax.grid(which='major', color='Grey', linestyle=':', linewidth=0.5)
-        ax.minorticks_on()
-        plt.tight_layout()
-        # plt.savefig(f"ib_link_gain_{int(alt/1000)}.pdf")
-        plt.show()
+        # fig, ax = plt.subplots(nrows=1, ncols=1, figsize=[6.4, 4.8])
+        # plt.title(f"Altitude = {alt/1000} km")
+        # ax.set_xlabel("Longitude [deg]")
+        # ax.set_ylabel("Latitude [deg]")
+        # im = ax.imshow(m, origin='lower', extent=[0, 140, 0, 100],
+        #                cmap='inferno', vmin=0.0, vmax=30.0, interpolation='bicubic')
+        # plt.colorbar(im, label='Link Gain [dB]', shrink=0.72)
+        # ax.set_xticks(np.arange(0, 140 + 20, 20), labels=np.arange(-112, -98 + 2, 2))
+        # ax.set_yticks(np.arange(0, 100 + 20, 20), labels=np.arange(52, 62 + 2, 2))
+        # ax.grid(which='minor', color='Grey', linestyle=':', linewidth=0.5)
+        # ax.grid(which='major', color='Grey', linestyle=':', linewidth=0.5)
+        # ax.minorticks_on()
+        # plt.tight_layout()
+        # # plt.savefig(f"ib_tx_gain_3l_{int(alt/1000)}.pdf")
+        # plt.savefig(f"ib_link_gain_3l_{int(alt/1000)}.pdf")
+        # plt.show()
 
         # 3D Map
         # fig, ax = plt.subplots(subplot_kw={'projection': '3d'})
@@ -120,9 +121,9 @@ if __name__ == '__main__':
 
         # plt.show()
 
-    # import h5py
-    # hf = h5py.File('ib3d_link_gain_mask.h5', 'w')
-    # hf.create_dataset('gain_mask', data=gm)
-    # hf.create_dataset('latitude', data=y)
-    # hf.create_dataset('longitude', data=x)
-    # hf.create_dataset('altitude', data=alts)
+    import h5py
+    hf = h5py.File('ib3d_link_gain_mask_1lam_rot13.h5', 'w')
+    hf.create_dataset('gain_mask', data=gm)
+    hf.create_dataset('latitude', data=y)
+    hf.create_dataset('longitude', data=x)
+    hf.create_dataset('altitude', data=alts)
