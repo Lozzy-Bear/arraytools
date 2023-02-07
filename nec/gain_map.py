@@ -46,8 +46,8 @@ def read_nec(file):
 
 
 if __name__ == '__main__':
-    tx_data, _ = read_nec('ibtx1l.out')
-    rx_data, _ = read_nec('ibrx.out')
+    tx_data, _ = read_nec('models/ibtx3l.out')
+    rx_data, _ = read_nec('models/ibrx.out')
     y = np.arange(52, 62 + 0.1, 0.1)  # lats
     x = np.arange(-112, -98 + 0.1, 0.1)  # lons
     lons, lats = np.meshgrid(x, y)
@@ -122,7 +122,7 @@ if __name__ == '__main__':
         # plt.show()
 
     import h5py
-    hf = h5py.File('ib3d_link_gain_mask_1lam_rot13.h5', 'w')
+    hf = h5py.File('ib3d_link_gain_mask_3lam_rot16.h5', 'w')
     hf.create_dataset('gain_mask', data=gm)
     hf.create_dataset('latitude', data=y)
     hf.create_dataset('longitude', data=x)
