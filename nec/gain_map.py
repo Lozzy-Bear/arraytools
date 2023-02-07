@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pretty_plots
 import pymap3d as pm
+import os
 
 
 def read_nec(file):
@@ -42,12 +43,18 @@ def read_nec(file):
                 volt_phi_phase.append(float(line[11]))
         data = np.array([theta, phi, vertical_power, horizontal_power, total_power, axial_ratio, tilt,
                          volt_theta_mag, volt_theta_phase, volt_phi_mag, volt_phi_phase])
+
     return data, sense
 
 
 if __name__ == '__main__':
-    tx_data, _ = read_nec('models/ibtx3l.out')
-    rx_data, _ = read_nec('models/ibrx.out')
+    tx_spacing = 3
+    tx_rotation = 16.0
+
+    path = os.path.dirname(__file__)
+    path = path.replace("\\", "/")
+    tx_data, _ = read_nec(f'{path}/models/ibtx{tx_spacing}l.out')
+    rx_data, _ = read_nec(f'{path}/models/ibrx.out')
     y = np.arange(52, 62 + 0.1, 0.1)  # lats
     x = np.arange(-112, -98 + 0.1, 0.1)  # lons
     lons, lats = np.meshgrid(x, y)
@@ -71,7 +78,7 @@ if __name__ == '__main__':
                                                tx_lat, tx_lon, 0.0, ell=pm.Ellipsoid("wgs84"), deg=True)
                 az2, el2, r2 = pm.geodetic2aer(lats[i, j], lons[i, j], alt,
                                                rx_lat, rx_lon, 0.0, ell=pm.Ellipsoid("wgs84"), deg=True)
-                az1 = np.round(((90.0 + 13.0 - az1) % 360.0))
+                az1 = np.round(((90.0 + tx_rotation - az1) % 360.0))
                 az2 = np.round(((90.0 + 7.0 - az2) % 360.0))
                 el1 = np.round(90.0 - el1)
                 el2 = np.round(90.0 - el2)
@@ -122,7 +129,7 @@ if __name__ == '__main__':
         # plt.show()
 
     import h5py
-    hf = h5py.File('ib3d_link_gain_mask_3lam_rot16.h5', 'w')
+    hf = h5py.File(f'ib3d_link_gain_mask_{tx_spacing}lam_rot{tx_rotation}.h5', 'w')
     hf.create_dataset('gain_mask', data=gm)
     hf.create_dataset('latitude', data=y)
     hf.create_dataset('longitude', data=x)
